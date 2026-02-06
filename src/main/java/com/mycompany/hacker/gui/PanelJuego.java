@@ -20,13 +20,12 @@ public class PanelJuego extends JPanel implements KeyListener {
 
     public void iniciarJuego(int filas, int cols) {
         modelo = new JuegoModelo(filas, cols);
-        // Cálculo dinámico del tamaño de celda
         int altoDisp = getHeight() > 0 ? getHeight() : 600;
         int anchoDisp = getWidth() > 0 ? getWidth() : 800;
         if (filas > 0 && cols > 0) {
             celdaSize = Math.min((altoDisp - 50) / filas, anchoDisp / cols);
         }
-        celdaSize = Math.max(celdaSize, 10); // Tamaño mínimo
+        celdaSize = Math.max(celdaSize, 10);
         repaint();
     }
 
@@ -81,6 +80,17 @@ public class PanelJuego extends JPanel implements KeyListener {
                 }
             }
         }
+
+        Posicion ping = modelo.getPosicionPing();
+        if (ping != null) {
+            int x = ping.x * celdaSize;
+            int y = ping.y * celdaSize;
+            g2.setColor(new Color(255, 255, 0, 100));
+            g2.setStroke(new BasicStroke(3));
+            g2.drawOval(x + 2, y + 2, celdaSize - 4, celdaSize - 4);
+            g2.drawString("SONAR", x + 5, y + 15);
+        }
+
     }
 
     private void dibujarEntidades(Graphics2D g2) {
@@ -97,48 +107,79 @@ public class PanelJuego extends JPanel implements KeyListener {
     }
 
     private void dibujarHUD(Graphics2D g2) {
-        g2.setColor(Color.WHITE);
-        g2.setFont(new Font("Monospaced", Font.BOLD, 14));
+        int margenLargo = (modelo.getColumnas() * celdaSize) + 20;
+        int alturaBase = getHeight() - 20;
 
-        // Info Habilidad
-        String txtHabilidad = (modelo.getCooldown() == 0) ? "[ESPACIO] EMP LISTO" : "EMP: " + modelo.getCooldown();
-        g2.drawString(txtHabilidad, getWidth() - 180, getHeight() - 10);
+        g2.setColor(new Color(0, 0, 0, 180));
+        g2.fillRect(0, getHeight() - 50, getWidth(), 50);
+        g2.setColor(Color.GREEN);
+        g2.drawRect(0, getHeight() - 50, getWidth() - 1, 49);
 
-        // Info Datos
-        String txtDatos = "DATOS: " + modelo.getItemsRecogidos() + " / " + modelo.getItemsTotales();
-        g2.drawString(txtDatos, 10, getHeight() - 10);
+        g2.setFont(new Font("Monospaced", Font.BOLD, 16));
+        g2.setColor(Color.CYAN);
+        String txtDatos = "DATOS EXTRAÍDOS: " + modelo.getItemsRecogidos() + "/" + modelo.getItemsTotales();
+        g2.drawString(txtDatos, 20, alturaBase);
 
-        // Mensajes Sistema
         if (!modelo.getMensajeSistema().isEmpty()) {
             g2.setColor(Color.YELLOW);
-            g2.drawString(modelo.getMensajeSistema(), 10, getHeight() - 30);
+            g2.setFont(new Font("Monospaced", Font.ITALIC, 14));
+            g2.drawString(">> " + modelo.getMensajeSistema(), 20, getHeight() - 65);
+        }
+
+        g2.setFont(new Font("Monospaced", Font.BOLD, 14));
+        int yItem = 40;
+
+        // Título lateral
+        g2.setColor(Color.GREEN);
+        g2.drawString("--- PROTOCOLOS ---", margenLargo, yItem);
+
+        yItem += 30;
+        dibujarEstadoHabilidad(g2, "EMP [SPACE]", modelo.getCooldown(), margenLargo, yItem);
+
+        yItem += 25;
+        dibujarEstadoHabilidad(g2, "DASH [SHIFT]", modelo.getCooldownDash(), margenLargo, yItem);
+
+        yItem += 25;
+        boolean pingActivo = modelo.getPosicionPing() != null;
+        g2.setColor(pingActivo ? Color.ORANGE : Color.GREEN);
+        g2.drawString("PING [P]: " + (pingActivo ? "ACTIVO" : "LISTO"), margenLargo, yItem);
+    }
+
+    private void dibujarEstadoHabilidad(Graphics2D g2, String nombre, int cooldown, int x, int y) {
+        if (cooldown == 0) {
+            g2.setColor(Color.GREEN);
+            g2.drawString(nombre + ": LISTO", x, y);
+        } else {
+            g2.setColor(Color.RED);
+            g2.drawString(nombre + ": " + cooldown + "s", x, y);
+            g2.fillRect(x, y + 5, 100 - (cooldown * 10), 3);
         }
     }
 
     private void dibujarPantallaFin(Graphics2D g2) {
-        g2.setColor(new Color(0, 0, 0, 150));
-        g2.fillRect(0, getHeight() / 2 - 50, getWidth(), 100);
+        g2.setColor(new Color(0, 0, 0, 200));
+        g2.fillRect(0, 0, getWidth(), getHeight());
 
-        g2.setColor(Color.WHITE);
-        g2.setFont(new Font("Arial", Font.BOLD, 30));
-
+        g2.setFont(new Font("Monospaced", Font.BOLD, 40));
         String msg = modelo.getMensajeFin();
         FontMetrics fm = g2.getFontMetrics();
-        g2.drawString(msg, (getWidth() - fm.stringWidth(msg)) / 2, getHeight() / 2 + 10);
 
-        g2.setFont(new Font("Arial", Font.PLAIN, 14));
-        String subMsg = "Presiona ESPACIO para volver al menú";
-        g2.drawString(subMsg, (getWidth() - g2.getFontMetrics().stringWidth(subMsg)) / 2, getHeight() / 2 + 40);
+        g2.setColor(Color.GREEN);
+        int xMsg = (getWidth() - fm.stringWidth(msg)) / 2;
+        int yMsg = getHeight() / 2;
+        g2.drawString(msg, xMsg, yMsg);
+
+        g2.setFont(new Font("Monospaced", Font.PLAIN, 18));
+        g2.setColor(Color.WHITE);
+        String subMsg = "PRESIONA [ESPACIO] PARA RECONECTAR";
+        fm = g2.getFontMetrics();
+        g2.drawString(subMsg, (getWidth() - fm.stringWidth(subMsg)) / 2, yMsg + 50);
     }
 
     @Override
     public void keyPressed(KeyEvent e) {
-        if (modelo == null) {
-            return;
-        }
-
-        if (modelo.isJuegoTerminado()) {
-            if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+        if (modelo == null || modelo.isJuegoTerminado()) {
+            if (modelo != null && e.getKeyCode() == KeyEvent.VK_SPACE) {
                 ventanaPrincipal.mostrarMenu();
             }
             return;
@@ -162,7 +203,13 @@ public class PanelJuego extends JPanel implements KeyListener {
         }
 
         if (dx != 0 || dy != 0) {
-            modelo.procesarTurnoJugador(dx, dy);
+            if (e.isControlDown()) {
+                modelo.lanzarPing(dx, dy);
+            } else if (e.isShiftDown()) {
+                modelo.procesarTurnoJugador(dx, dy, true);
+            } else {
+                modelo.procesarTurnoJugador(dx, dy, false);
+            }
             repaint();
         }
     }

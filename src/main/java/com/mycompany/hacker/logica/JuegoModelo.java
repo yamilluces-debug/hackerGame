@@ -28,6 +28,11 @@ public class JuegoModelo {
     private final int MAX_COOLDOWN = 10;
     private String mensajeSistema = "";
 
+    private Posicion posicionPing = null;
+    private int turnosPingRestantes = 0;
+    private int cooldownDash = 0;
+    private final int MAX_COOLDOWN_DASH = 5;
+
     public JuegoModelo(int f, int c) {
         this.filas = f;
         this.columnas = c;
@@ -128,7 +133,6 @@ public class JuegoModelo {
         Random rand = new Random();
         int colocados = 0;
         int intentos = 0;
-        // Límite de intentos para evitar bucles infinitos si el mapa está muy lleno
         while (colocados < cantidad && intentos < 1000) {
             int r = rand.nextInt(filas);
             int c = rand.nextInt(columnas);
@@ -158,30 +162,74 @@ public class JuegoModelo {
         }
     }
 
-    public void procesarTurnoJugador(int dx, int dy) {
+    public void procesarTurnoJugador(int dx, int dy, boolean esDash) {
         if (juegoTerminado) {
             return;
         }
 
         mensajeSistema = "";
+        int multiplicador = 1;
 
-        int nuevaX = jugador.x + dx;
-        int nuevaY = jugador.y + dy;
+        // Lógica de Overclock (Dash)
+        if (esDash) {
+            if (cooldownDash == 0) {
+                multiplicador = 2;
+                cooldownDash = MAX_COOLDOWN_DASH;
+                mensajeSistema = "¡OVERCLOCK ACTIVADO!";
+            } else {
+                mensajeSistema = "DASH EN ENFRIAMIENTO (" + cooldownDash + ")";
+                return;
+            }
+        }
 
+        int nuevaX = jugador.x + (dx * multiplicador);
+        int nuevaY = jugador.y + (dy * multiplicador);
+
+        // Validar movimiento (Saltar muros permitido en Dash según requerimiento)
         if (nuevaX >= 0 && nuevaX < columnas && nuevaY >= 0 && nuevaY < filas) {
+            // Solo verificamos la celda de destino
             if (tablero[nuevaY][nuevaX] != PARED) {
                 jugador.x = nuevaX;
                 jugador.y = nuevaY;
                 chequearCasilla();
-
-                if (cooldownHabilidad > 0) {
-                    cooldownHabilidad--;
-                }
+                finalizarTurno();
             }
         }
+    }
 
-        if (juegoTerminado) {
+    public void lanzarPing(int dx, int dy) {
+        if (juegoTerminado || posicionPing != null) {
             return;
+        }
+
+        int px = jugador.x + (dx * 3);
+        int py = jugador.y + (dy * 3);
+
+        px = Math.max(0, Math.min(columnas - 1, px));
+        py = Math.max(0, Math.min(filas - 1, py));
+
+        posicionPing = new Posicion(px, py);
+        turnosPingRestantes = 4;
+
+        mensajeSistema = "SEÑUELO ENVIADO A [" + px + "," + py + "]";
+
+        finalizarTurno();
+    }
+
+    private void finalizarTurno() {
+        // Decrementar cooldowns
+        if (cooldownDash > 0) {
+            cooldownDash--;
+        }
+        if (cooldownHabilidad > 0) {
+            cooldownHabilidad--; // EMP
+        }
+        // Manejar duración del Ping
+        if (turnosPingRestantes > 0) {
+            turnosPingRestantes--;
+            if (turnosPingRestantes == 0) {
+                posicionPing = null;
+            }
         }
 
         moverEnemigos();
@@ -227,9 +275,19 @@ public class JuegoModelo {
     }
 
     private void moverEnemigos() {
+
+        Posicion objetivoActual = (posicionPing != null) ? posicionPing : jugador;
         for (Enemigo e : enemigos) {
-            e.moverHacia(jugador, this);
+            e.moverHacia(objetivoActual, this);
         }
+    }
+
+    public Posicion getPosicionPing() {
+        return posicionPing;
+    }
+
+    public int getCooldownDash() {
+        return cooldownDash;
     }
 
     private void chequearColisionEnemigos() {
