@@ -1,8 +1,8 @@
 package com.mycompany.hacker.gui;
 
-import com.mycompany.hacker.logica.Posicion;
-import com.mycompany.hacker.logica.JuegoModelo;
 import com.mycompany.hacker.logica.Enemigo;
+import com.mycompany.hacker.logica.JuegoModelo;
+import com.mycompany.hacker.logica.Posicion;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -28,10 +28,9 @@ public class MainVentana extends JFrame {
         mainPanel.add(panelJuego, "JUEGO");
 
         add(mainPanel);
-        mostrarMenu(); // Método nuevo para mostrar menú
+        mostrarMenu();
     }
 
-    // --- MÉTODOS PÚBLICOS PARA NAVEGACIÓN (Solución del error) ---
     public void mostrarMenu() {
         cardLayout.show(mainPanel, "MENU");
         mainPanel.requestFocusInWindow();
@@ -40,10 +39,9 @@ public class MainVentana extends JFrame {
     public void iniciarPartida(int f, int c) {
         panelJuego.iniciarJuego(f, c);
         cardLayout.show(mainPanel, "JUEGO");
-        panelJuego.requestFocusInWindow(); // Importante para detectar teclas
+        panelJuego.requestFocusInWindow();
     }
 
-    // -------------------------------------------------------------
     private JPanel crearPanelMenu() {
         JPanel menu = new JPanel(new GridBagLayout());
         menu.setBackground(Color.BLACK);
@@ -58,7 +56,6 @@ public class MainVentana extends JFrame {
         title.setFont(new Font("Monospaced", Font.BOLD, 24));
         menu.add(title, gbc);
 
-        // Inputs
         gbc.gridy++;
         JPanel configPanel = new JPanel();
         configPanel.setOpaque(false);
@@ -107,7 +104,6 @@ public class MainVentana extends JFrame {
     }
 }
 
-// --- CLASE INTERNA PARA EL DIBUJO DEL TABLERO ---
 class PanelJuego extends JPanel implements KeyListener {
 
     private JuegoModelo modelo;
@@ -126,7 +122,6 @@ class PanelJuego extends JPanel implements KeyListener {
         int altoDisponible = getHeight() > 0 ? getHeight() : 600;
         int anchoDisponible = getWidth() > 0 ? getWidth() : 800;
 
-        // Evitar división por cero
         if (filas > 0 && cols > 0) {
             celdaSize = Math.min((altoDisponible - 50) / filas, anchoDisponible / cols);
         }
@@ -190,16 +185,24 @@ class PanelJuego extends JPanel implements KeyListener {
         // 3. DIBUJAR ENEMIGOS
         g2.setColor(Color.RED);
         for (Enemigo e : modelo.getEnemigos()) {
+            if (e.estaCongelado()) {
+                g2.setColor(Color.BLUE);
+            } else {
+                g2.setColor(Color.RED);
+            }
             g2.fillOval(e.getPos().x * celdaSize + 5, e.getPos().y * celdaSize + 5, celdaSize - 10, celdaSize - 10);
         }
 
         // 4. HUD
         g2.setColor(Color.WHITE);
-        g2.setFont(new Font("Monospaced", Font.BOLD, 16));
-        String estado = "DATOS: " + modelo.getItemsRecogidos() + " / " + modelo.getItemsTotales();
-        g2.drawString(estado, 10, getHeight() - 10);
+        String txtHabilidad = (modelo.getCooldown() == 0) ? "[ESPACIO] EMP LISTO" : "EMP: " + modelo.getCooldown();
+        g2.drawString(txtHabilidad, getWidth() - 200, getHeight() - 10);
 
         // 5. MENSAJE FIN DE JUEGO
+        if (!modelo.getMensajeSistema().isEmpty()) {
+            g2.setColor(Color.YELLOW);
+            g2.drawString(modelo.getMensajeSistema(), 10, getHeight() - 30);
+        }
         if (modelo.isJuegoTerminado()) {
             g2.setColor(new Color(0, 0, 0, 150));
             g2.fillRect(0, getHeight() / 2 - 50, getWidth(), 100);
@@ -215,7 +218,6 @@ class PanelJuego extends JPanel implements KeyListener {
         }
     }
 
-    // --- CONTROLES (INPUT) ---
     @Override
     public void keyPressed(KeyEvent e) {
         if (modelo == null) {
@@ -224,7 +226,6 @@ class PanelJuego extends JPanel implements KeyListener {
 
         if (modelo.isJuegoTerminado()) {
             if (e.getKeyCode() == KeyEvent.VK_SPACE) {
-                // AQUI ESTABA EL ERROR: Ahora usamos el método limpio
                 ventanaPrincipal.mostrarMenu();
             }
             return;
@@ -244,6 +245,10 @@ class PanelJuego extends JPanel implements KeyListener {
             case KeyEvent.VK_RIGHT:
                 dx = 1;
                 break;
+            case KeyEvent.VK_SPACE:
+                modelo.activarHabilidadEspecial();
+                repaint();
+                return;
         }
 
         if (dx != 0 || dy != 0) {
