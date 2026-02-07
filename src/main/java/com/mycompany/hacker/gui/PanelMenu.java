@@ -34,11 +34,10 @@ public class PanelMenu extends JPanel {
         gbc.gridy = 1;
         add(subtitle, gbc);
 
-        // Espacio en blanco
         gbc.gridy = 2;
-        add(Box.createVerticalStrut(30), gbc);
+        add(Box.createVerticalStrut(20), gbc);
 
-        // Botón Principal: Ejecutar Trabajo
+        // --- Botón 1: EJECUTAR TRABAJO ---
         gbc.gridy = 3;
         JButton btnTrabajo = new JButton("EJECUTAR TRABAJO DE INFILTRACIÓN");
         estilizarBoton(btnTrabajo, Color.GREEN);
@@ -48,8 +47,17 @@ public class PanelMenu extends JPanel {
         });
         add(btnTrabajo, gbc);
 
-        // Botón Ayuda
+        // --- Botón 2: MERCADO NEGRO (TIENDA) ---
         gbc.gridy = 4;
+        JButton btnTienda = new JButton("MERCADO NEGRO (UPGRADES)");
+        estilizarBoton(btnTienda, Color.YELLOW);
+        btnTienda.addActionListener(e -> {
+            new VentanaTienda(ventanaPrincipal).setVisible(true);
+        });
+        add(btnTienda, gbc);
+
+        // --- Botón 3: AYUDA ---
+        gbc.gridy = 5;
         JButton btnAyuda = new JButton("CONSULTAR MANUAL DE RED");
         estilizarBoton(btnAyuda, Color.CYAN);
         btnAyuda.addActionListener(e -> {
@@ -67,7 +75,6 @@ public class PanelMenu extends JPanel {
         btn.setFont(new Font("Monospaced", Font.BOLD, 14));
         btn.setBorder(BorderFactory.createLineBorder(c, 2));
 
-        // Efecto visual simple al pasar el mouse (opcional)
         btn.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 btn.setBackground(new Color(20, 20, 20));

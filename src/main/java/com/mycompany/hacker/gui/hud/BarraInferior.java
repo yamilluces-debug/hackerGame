@@ -15,9 +15,14 @@ public class BarraInferior implements HudComponent {
         g2.setStroke(new BasicStroke(2));
         g2.drawLine(0, sh - 50, sw, sh - 50);
 
+        g2.setColor(Color.YELLOW);
+        String txtMonedas = "CRÉDITOS: $" + modelo.getMonedasTotales();
+        g2.drawString(txtMonedas, 20, sh - 35); // Un poco más arriba que los PKTS
+
+        // Paquetes (Pkts)
         g2.setColor(Color.CYAN);
         String textoPkts = "PKTS: " + modelo.getItemsRecogidos() + "/" + modelo.getItemsTotales();
-        g2.drawString(textoPkts, 20, sh - 18);
+        g2.drawString(textoPkts, 20, sh - 15);
 
         if (!modelo.getMensajeSistema().isEmpty()) {
             String fullMsg = "SYS: " + modelo.getMensajeSistema();
@@ -30,5 +35,6 @@ public class BarraInferior implements HudComponent {
             g2.setColor(Color.YELLOW);
             g2.drawString(fullMsg, xMensaje, sh - 18);
         }
+
     }
 }

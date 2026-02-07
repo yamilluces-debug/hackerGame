@@ -39,9 +39,23 @@ public class JuegoModelo {
     private int virusInventario = 0;
     private boolean refuerzosEnviados = false;
 
+    private int monedasTotales;
+    private int monedasGanadasEnPartida;
+    private boolean progresoGuardado = false;
+
+    private int duracionEMP;
+    private int maxCooldownDash;
+    private boolean tieneEscudo;
+
     public JuegoModelo(int f, int c) {
         this.filas = f;
         this.columnas = c;
+        int[] datos = PersistenciaDatos.cargarProgreso();
+        this.monedasTotales = datos[0];
+        this.duracionEMP = datos[1];
+        this.maxCooldownDash = datos[2];
+        this.tieneEscudo = datos[3] == 1;
+        this.mensajeFin = "";
         generarNivel();
     }
 
@@ -200,12 +214,6 @@ public class JuegoModelo {
         }
     }
 
-    /*private void moverEnemigos() {
-        Posicion obj = (posicionPing != null) ? posicionPing : jugador;
-        for (Enemigo e : enemigos) {
-            e.actuar(obj, this);
-        }
-    }*/
     private void moverEnemigos() {
         Posicion objetivoEfectivo = (posicionPing != null) ? posicionPing : jugador;
 
@@ -252,22 +260,34 @@ public class JuegoModelo {
             juegoTerminado = true;
             victoria = true;
             mensajeFin = "¡HACKEO EXITOSO!";
+            finalizarPartida();
         }
     }
 
-    /*private void chequearCasilla() {
-        int celda = tablero[jugador.y][jugador.x];
-        if (celda == ITEM) {
-            itemsRecogidos++;
-            tablero[jugador.y][jugador.x] = VACIO;
-        } else if (celda == SALIDA) {
-            if (itemsRecogidos >= itemsTotales) {
-                juegoTerminado = true;
-                victoria = true;
-                mensajeFin = "¡HACKEO COMPLETADO!";
+    /*public void activarHabilidadEspecial() {
+        if (cooldownHabilidad == 0) {
+            for (Enemigo e : enemigos) {
+                e.congelar(duracionEMP); // USA LA MEJORA
             }
+            cooldownHabilidad = 10;
         }
     }*/
+    public void activarHabilidadEspecial() {
+        if (juegoTerminado) {
+            return;
+        }
+
+        if (cooldownHabilidad == 0) {
+            for (Enemigo e : enemigos) {
+                e.congelar(duracionEMP);
+            }
+            cooldownHabilidad = MAX_COOLDOWN;
+            mensajeSistema = "¡EMP LANZADO! ENEMIGOS CONGELADOS.";
+        } else {
+            mensajeSistema = "HABILIDAD EN RECARGA... (" + cooldownHabilidad + ")";
+        }
+    }
+
     public int getHeatLevel() {
         return heatLevel;
     }
@@ -289,6 +309,7 @@ public class JuegoModelo {
 
     public void procesarTurnoJugador(int dx, int dy, boolean esDash) {
         if (juegoTerminado) {
+            finalizarPartida();
             return;
         }
 
@@ -317,6 +338,7 @@ public class JuegoModelo {
                 finalizarTurno();
             }
         }
+
     }
 
     public void lanzarPing(int dx, int dy) {
@@ -358,28 +380,28 @@ public class JuegoModelo {
         chequearColisionEnemigos();
     }
 
+    private void finalizarPartida() {
+        if (progresoGuardado) {
+            return;
+        }
+
+        // Cálculo: 10 por item + 10 si es victoria
+        monedasGanadasEnPartida = itemsRecogidos * 10;
+        if (victoria) {
+            monedasGanadasEnPartida += 10;
+        }
+
+        monedasTotales += monedasGanadasEnPartida;
+        PersistenciaDatos.guardarMonedas(monedasTotales); // Guardar en archivo
+        progresoGuardado = true;
+    }
+
     public int getCooldown() {
         return cooldownHabilidad;
     }
 
     public String getMensajeSistema() {
         return mensajeSistema;
-    }
-
-    public void activarHabilidadEspecial() {
-        if (juegoTerminado) {
-            return;
-        }
-
-        if (cooldownHabilidad == 0) {
-            for (Enemigo e : enemigos) {
-                e.congelar(3);
-            }
-            cooldownHabilidad = MAX_COOLDOWN;
-            mensajeSistema = "¡EMP LANZADO! ENEMIGOS CONGELADOS.";
-        } else {
-            mensajeSistema = "HABILIDAD EN RECARGA... (" + cooldownHabilidad + ")";
-        }
     }
 
     public Posicion getPosicionPing() {
@@ -393,9 +415,16 @@ public class JuegoModelo {
     private void chequearColisionEnemigos() {
         for (Enemigo e : enemigos) {
             if (e.getPos().equals(jugador)) {
-                juegoTerminado = true;
-                victoria = false;
-                mensajeFin = "¡TE HA ATRAPADO EL FIREWALL!";
+                if (tieneEscudo) {
+                    tieneEscudo = false;
+                    PersistenciaDatos.guardarProgreso(monedasTotales, duracionEMP, maxCooldownDash, 0);
+                    mensajeSistema = "¡ESCUDO ACTIVADO! FIREWALL BLOQUEADO.";
+                    e.congelar(2);
+                } else {
+                    juegoTerminado = true;
+                    victoria = false;
+                    finalizarPartida();
+                }
             }
         }
     }
@@ -476,6 +505,14 @@ public class JuegoModelo {
     // Getters
     public int getFilas() {
         return filas;
+    }
+
+    public int getMonedasTotales() {
+        return monedasTotales;
+    }
+
+    public int getMonedasGanadas() {
+        return monedasGanadasEnPartida;
     }
 
     public int getColumnas() {
