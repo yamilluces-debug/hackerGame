@@ -105,17 +105,7 @@ public class PanelMenu extends JPanel {
     }
 
     private void mostrarAyuda() {
-        String textoAyuda = "OBJETIVO: Recoge todos los DATOS (nodos cyan) y llega a la SALIDA.\n\n"
-                + "CONTROLES:\n"
-                + "- FLECHAS: Moverse (1 turno).\n"
-                + "- SHIFT + FLECHA: Overclock (Moverse 2 casillas).\n"
-                + "- CTRL + FLECHA: Lanzar PING (Atraer enemigos).\n"
-                + "- ESPACIO: Pulso EMP (Congelar enemigos cercanos).\n\n"
-                + "ENEMIGOS:\n"
-                + "- ROJO (Rombo): Sniper. No cruces su fila/columna.\n"
-                + "- NARANJA: Corredor. Muy rápido en línea recta.\n"
-                + "- MAGENTA: Tanque. Se mueve cada 2 turnos.";
-
-        JOptionPane.showMessageDialog(this, textoAyuda, "MANUAL DEL HACKER", JOptionPane.INFORMATION_MESSAGE);
+        VentanaManual manual = new VentanaManual(ventanaPrincipal);
+        manual.setVisible(true);
     }
 }

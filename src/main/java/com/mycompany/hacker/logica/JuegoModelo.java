@@ -84,7 +84,7 @@ public class JuegoModelo {
         juegoTerminado = false;
 
         // Colocar ítems y enemigos
-        int numItems = (filas * columnas) / 10;
+        int numItems = (filas * columnas) / 8;
         int numEnemigos = (filas * columnas) / 15;
 
         colocarObjetoAleatorio(ITEM, numItems);
