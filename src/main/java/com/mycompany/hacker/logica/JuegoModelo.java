@@ -139,16 +139,36 @@ public class JuegoModelo {
         Random rand = new Random();
         int colocados = 0;
         int intentos = 0;
-        while (colocados < cantidad && intentos < 1000) {
+
+        while (colocados < cantidad && intentos < 2000) {
             int r = rand.nextInt(filas);
             int c = rand.nextInt(columnas);
 
             if (tablero[r][c] == VACIO && (r != 0 || c != 0)) {
-                tablero[r][c] = tipo;
-                colocados++;
+                if (!hayObjetoAdyacente(r, c)) {
+                    tablero[r][c] = tipo;
+                    colocados++;
+                }
             }
             intentos++;
         }
+    }
+
+    private boolean hayObjetoAdyacente(int r, int c) {
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                int nr = r + i;
+                int nc = c + j;
+
+                if (nr >= 0 && nr < filas && nc >= 0 && nc < columnas) {
+                    int contenido = tablero[nr][nc];
+                    if (contenido == ITEM || contenido == EXPLOIT_VIRUS) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private void spawnEnemigos(int cantidad) {
