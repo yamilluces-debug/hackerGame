@@ -6,8 +6,8 @@ import javax.swing.*;
 public class PanelMenu extends JPanel {
 
     private MainVentana ventanaPrincipal;
-    private JTextField txtFilas;
-    private JTextField txtCols;
+    private JComboBox<String> comboDificultad;
+    private JTextField txtSeed; // Para la semilla opcional
 
     public PanelMenu(MainVentana v) {
         this.ventanaPrincipal = v;
@@ -19,56 +19,103 @@ public class PanelMenu extends JPanel {
     private void inicializarComponentes() {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // Título con estilo
+        JLabel title = new JLabel("BREACH PROTOCOL v1.0", SwingConstants.CENTER);
+        title.setForeground(Color.GREEN);
+        title.setFont(new Font("Monospaced", Font.BOLD, 28));
         gbc.gridx = 0;
         gbc.gridy = 0;
-
-        // Título
-        JLabel title = new JLabel("CONFIGURACIÓN DE RED");
-        title.setForeground(Color.GREEN);
-        title.setFont(new Font("Monospaced", Font.BOLD, 24));
+        gbc.gridwidth = 2;
         add(title, gbc);
 
-        // Inputs
+        // Selector de Dificultad
         gbc.gridy++;
-        JPanel configPanel = new JPanel();
-        configPanel.setOpaque(false);
+        gbc.gridwidth = 1;
+        JLabel lblDif = new JLabel("NIVEL DE ACCESO:");
+        lblDif.setForeground(Color.WHITE);
+        add(lblDif, gbc);
 
-        JLabel lblF = new JLabel("Filas:");
-        lblF.setForeground(Color.WHITE);
-        txtFilas = new JTextField("10", 3);
+        gbc.gridx = 1;
+        String[] niveles = {"NOVATO (8x8)", "HACKER (15x15)", "ELITE (25x25)", "PERSONALIZADO"};
+        comboDificultad = new JComboBox<>(niveles);
+        add(comboDificultad, gbc);
 
-        JLabel lblC = new JLabel("Cols:");
-        lblC.setForeground(Color.WHITE);
-        txtCols = new JTextField("10", 3);
-
-        configPanel.add(lblF);
-        configPanel.add(txtFilas);
-        configPanel.add(lblC);
-        configPanel.add(txtCols);
-        add(configPanel, gbc);
-
-        // Botón Start
+        // Campo para Semilla (Opcional)
+        gbc.gridx = 0;
         gbc.gridy++;
-        JButton btnStart = new JButton("INICIAR HACKEO");
-        btnStart.setBackground(Color.DARK_GRAY);
-        btnStart.setForeground(Color.GREEN);
+        JLabel lblSeed = new JLabel("NODO (SEED):");
+        lblSeed.setForeground(Color.GRAY);
+        add(lblSeed, gbc);
 
-        btnStart.addActionListener(e -> validarYArrancar());
+        gbc.gridx = 1;
+        txtSeed = new JTextField();
+        add(txtSeed, gbc);
+
+        // Botón Iniciar
+        gbc.gridx = 0;
+        gbc.gridy++;
+        gbc.gridwidth = 2;
+        JButton btnStart = new JButton("ESTABLECER CONEXIÓN");
+        estilizarBoton(btnStart, Color.GREEN);
+        btnStart.addActionListener(e -> procesarInicio());
         add(btnStart, gbc);
+
+        // Botón Ayuda
+        gbc.gridy++;
+        JButton btnAyuda = new JButton("MANUAL DE INTRUSIÓN");
+        estilizarBoton(btnAyuda, Color.CYAN);
+        btnAyuda.addActionListener(e -> mostrarAyuda());
+        add(btnAyuda, gbc);
     }
 
-    private void validarYArrancar() {
-        try {
-            int f = Integer.parseInt(txtFilas.getText());
-            int c = Integer.parseInt(txtCols.getText());
+    private void estilizarBoton(JButton btn, Color c) {
+        btn.setBackground(Color.BLACK);
+        btn.setForeground(c);
+        btn.setFocusPainted(false);
+        btn.setFont(new Font("Monospaced", Font.BOLD, 14));
+        btn.setBorder(BorderFactory.createLineBorder(c, 2));
+    }
 
-            if (f < 5 || c < 5 || f > 50 || c > 50) {
-                JOptionPane.showMessageDialog(this, "Tamaño entre 5 y 50");
-                return;
+    private void procesarInicio() {
+        int f = 10, c = 10;
+        String seleccion = (String) comboDificultad.getSelectedItem();
+
+        switch (seleccion) {
+            case "NOVATO (8x8)" -> {
+                f = 8;
+                c = 8;
             }
-            ventanaPrincipal.iniciarPartida(f, c);
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Introduce números válidos");
+            case "HACKER (15x15)" -> {
+                f = 15;
+                c = 15;
+            }
+            case "ELITE (25x25)" -> {
+                f = 25;
+                c = 25;
+            }
+            case "PERSONALIZADO" -> {
+                f = 20;
+                c = 20;
+            }
         }
+
+        ventanaPrincipal.iniciarPartida(f, c);
+    }
+
+    private void mostrarAyuda() {
+        String textoAyuda = "OBJETIVO: Recoge todos los DATOS (nodos cyan) y llega a la SALIDA.\n\n"
+                + "CONTROLES:\n"
+                + "- FLECHAS: Moverse (1 turno).\n"
+                + "- SHIFT + FLECHA: Overclock (Moverse 2 casillas).\n"
+                + "- CTRL + FLECHA: Lanzar PING (Atraer enemigos).\n"
+                + "- ESPACIO: Pulso EMP (Congelar enemigos cercanos).\n\n"
+                + "ENEMIGOS:\n"
+                + "- ROJO (Rombo): Sniper. No cruces su fila/columna.\n"
+                + "- NARANJA: Corredor. Muy rápido en línea recta.\n"
+                + "- MAGENTA: Tanque. Se mueve cada 2 turnos.";
+
+        JOptionPane.showMessageDialog(this, textoAyuda, "MANUAL DEL HACKER", JOptionPane.INFORMATION_MESSAGE);
     }
 }

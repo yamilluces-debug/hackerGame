@@ -13,6 +13,21 @@ public class EnemigoBasico extends Enemigo {
             return;
         }
 
-        moverHaciaObjetivo(objetivo, modelo);
+        if (objetivo == null) {
+            int dir = new java.util.Random().nextInt(4);
+            int dx = 0, dy = 0;
+            if (dir == 0) {
+                dy = -1;
+            } else if (dir == 1) {
+                dy = 1;
+            } else if (dir == 2) {
+                dx = -1;
+            } else {
+                dx = 1;
+            }
+            intentarMover(dx, dy, modelo);
+        } else {
+            moverHaciaObjetivo(objetivo, modelo);
+        }
     }
 }

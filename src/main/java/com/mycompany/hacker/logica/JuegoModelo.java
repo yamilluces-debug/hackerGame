@@ -33,6 +33,12 @@ public class JuegoModelo {
     private int cooldownDash = 0;
     private final int MAX_COOLDOWN_DASH = 5;
 
+    public static final int EXPLOIT_VIRUS = 4;
+
+    private int heatLevel = 1; // 1: Sigilo, 2: Sospecha, 3: Brecha
+    private int virusInventario = 0;
+    private boolean refuerzosEnviados = false;
+
     public JuegoModelo(int f, int c) {
         this.filas = f;
         this.columnas = c;
@@ -149,34 +155,105 @@ public class JuegoModelo {
         Random rand = new Random();
         int colocados = 0;
         int intentos = 0;
+
         while (colocados < cantidad && intentos < 1000) {
             int r = rand.nextInt(filas);
             int c = rand.nextInt(columnas);
 
-            int tipo = rand.nextInt(3);
             if (tablero[r][c] == VACIO && (r + c > 4)) {
-                switch (tipo) {
-                    case 0 ->
-                        enemigos.add(new EnemigoCorredor(r, c));
-                    case 1 ->
-                        enemigos.add(new EnemigoTanque(r, c));
-                    case 2 ->
-                        enemigos.add(new EnemigoBasico(r, c));
-                    //enemigos.add(new EnemigoTorreta(r, c));
-                    case 3 ->
-                        enemigos.add(new EnemigoBasico(r, c));
+                int probabilidad = rand.nextInt(100); // Rango de 0 a 99
+
+                if (probabilidad < 60) {
+                    // 60% de las veces: Básico
+                    enemigos.add(new EnemigoBasico(c, r));
+                } else if (probabilidad < 85) {
+                    // 25% de las veces: Tanque
+                    enemigos.add(new EnemigoTanque(c, r));
+                } else {
+                    // 15% de las veces: Corredor
+                    enemigos.add(new EnemigoCorredor(c, r));
                 }
+
                 colocados++;
             }
             intentos++;
         }
     }
 
-    private void moverEnemigos() {
+    /*private void moverEnemigos() {
         Posicion obj = (posicionPing != null) ? posicionPing : jugador;
         for (Enemigo e : enemigos) {
             e.actuar(obj, this);
         }
+    }*/
+    private void moverEnemigos() {
+        Posicion objetivoEfectivo = (posicionPing != null) ? posicionPing : jugador;
+
+        for (Enemigo e : enemigos) {
+            if (posicionPing != null) {
+                // Si hay ping, todos van al ping sin importar el Heat
+                e.actuar(posicionPing, this);
+                continue;
+            }
+
+            // Comportamiento por Heat Level
+            switch (heatLevel) {
+                case 1 -> {
+                    // En sigilo, solo patrullan al azar (pasamos null como objetivo)
+                    e.actuar(null, this);
+                }
+                case 2 -> {
+                    // Solo los Básicos te siguen, los demás patrullan
+                    if (e instanceof EnemigoBasico) {
+                        e.actuar(jugador, this);
+                    } else {
+                        e.actuar(null, this);
+                    }
+                }
+                case 3 -> {
+                    // Todos a por ti
+                    e.actuar(jugador, this);
+                }
+            }
+        }
+    }
+
+    private void chequearCasilla() {
+        int celda = tablero[jugador.y][jugador.x];
+        if (celda == ITEM) {
+            itemsRecogidos++;
+            tablero[jugador.y][jugador.x] = VACIO;
+            actualizarHeatLevel(); // <--- IMPORTANTE
+        } else if (celda == EXPLOIT_VIRUS) {
+            virusInventario++;
+            tablero[jugador.y][jugador.x] = VACIO;
+            mensajeSistema = "VIRUS ADQUIRIDO (Presiona Q).";
+        } else if (celda == SALIDA && itemsRecogidos >= itemsTotales) {
+            juegoTerminado = true;
+            victoria = true;
+            mensajeFin = "¡HACKEO EXITOSO!";
+        }
+    }
+
+    /*private void chequearCasilla() {
+        int celda = tablero[jugador.y][jugador.x];
+        if (celda == ITEM) {
+            itemsRecogidos++;
+            tablero[jugador.y][jugador.x] = VACIO;
+        } else if (celda == SALIDA) {
+            if (itemsRecogidos >= itemsTotales) {
+                juegoTerminado = true;
+                victoria = true;
+                mensajeFin = "¡HACKEO COMPLETADO!";
+            }
+        }
+    }*/
+    public int getHeatLevel() {
+        return heatLevel;
+    }
+
+    public int getVirusInventario() {
+        return virusInventario;
     }
 
     public boolean hayLineaDeVision(Posicion p1, Posicion p2) {
@@ -285,20 +362,6 @@ public class JuegoModelo {
         }
     }
 
-    private void chequearCasilla() {
-        int celda = tablero[jugador.y][jugador.x];
-        if (celda == ITEM) {
-            itemsRecogidos++;
-            tablero[jugador.y][jugador.x] = VACIO;
-        } else if (celda == SALIDA) {
-            if (itemsRecogidos >= itemsTotales) {
-                juegoTerminado = true;
-                victoria = true;
-                mensajeFin = "¡HACKEO COMPLETADO!";
-            }
-        }
-    }
-
     public Posicion getPosicionPing() {
         return posicionPing;
     }
@@ -333,6 +396,61 @@ public class JuegoModelo {
             }
         }
         return true;
+    }
+
+    private void actualizarHeatLevel() {
+        double progreso = (double) itemsRecogidos / itemsTotales;
+
+        if (progreso >= 1.0 && heatLevel < 3) {
+            heatLevel = 3;
+            mensajeSistema = "¡ALERTA MÁXIMA! SISTEMA COMPROMETIDO.";
+            generarRefuerzos();
+        } else if (progreso >= 0.5 && heatLevel < 2) {
+            heatLevel = 2;
+            mensajeSistema = "SISTEMA EN ESTADO DE SOSPECHA.";
+        }
+    }
+
+    private void generarRefuerzos() {
+        if (refuerzosEnviados) {
+            return;
+        }
+        Random rand = new Random();
+        int creados = 0;
+        // Intentar crear 2 enemigos cerca de la salida (filas-1, columnas-1)
+        while (creados < 2) {
+            int r = filas - 1 - rand.nextInt(3);
+            int c = columnas - 1 - rand.nextInt(3);
+            if (tablero[r][c] == VACIO && (r != jugador.y || c != jugador.x)) {
+                enemigos.add(new EnemigoCorredor(c, r)); // Refuerzos rápidos
+                creados++;
+            }
+        }
+        refuerzosEnviados = true;
+    }
+
+    public void usarVirusSobrecarga() {
+        if (virusInventario <= 0 || enemigos.isEmpty()) {
+            return;
+        }
+
+        Enemigo masCercano = null;
+        double distMin = Double.MAX_VALUE;
+
+        for (Enemigo e : enemigos) {
+            double d = Math.sqrt(Math.pow(e.getPos().x - jugador.x, 2) + Math.pow(e.getPos().y - jugador.y, 2));
+            if (d < distMin) {
+                distMin = d;
+                masCercano = e;
+            }
+        }
+
+        if (masCercano != null) {
+            enemigos.remove(masCercano);
+            virusInventario--;
+            mensajeSistema = "VIRUS EJECUTADO: ENEMIGO ELIMINADO.";
+
+        }
     }
 
     // Getters

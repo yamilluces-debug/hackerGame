@@ -77,6 +77,13 @@ public class PanelJuego extends JPanel implements KeyListener {
                         g2.setColor(Color.CYAN);
                         g2.fillOval(x + celdaSize / 4, y + celdaSize / 4, celdaSize / 2, celdaSize / 2);
                     }
+                    case JuegoModelo.EXPLOIT_VIRUS -> {
+                        g2.setColor(Color.WHITE);
+                        g2.setStroke(new BasicStroke(2));
+                        g2.drawRect(x + 10, y + 10, celdaSize - 20, celdaSize - 20);
+                        g2.setColor(Color.RED);
+                        g2.fillOval(x + celdaSize / 3, y + celdaSize / 3, celdaSize / 3, celdaSize / 3);
+                    }
                 }
             }
         }
@@ -119,37 +126,15 @@ public class PanelJuego extends JPanel implements KeyListener {
                 g2.setColor(Color.ORANGE);
             } else if (e instanceof EnemigoTanque) {
                 g2.setColor(Color.MAGENTA);
-            } else if (e instanceof EnemigoTorreta) {
-                g2.setColor(Color.RED);
             } else if (e instanceof EnemigoBasico) {
-                g2.setColor(Color.GREEN);
+                g2.setColor(Color.RED);
             }
 
-            if (e instanceof EnemigoTorreta) {
-                int[] xPoints = {centroX, ex + celdaSize - 8, centroX, ex + 8};
-                int[] yPoints = {ey + 8, centroY, ey + celdaSize - 8, centroY};
-                g2.fillPolygon(xPoints, yPoints, 4);
-
-                g2.setColor(Color.BLACK);
-                g2.fillRect(centroX - 2, centroY - 2, 4, 4);
-
-            } else if (e instanceof EnemigoTanque) {
-                g2.fillOval(ex + 4, ey + 4, celdaSize - 8, celdaSize - 8);
-
-                g2.setColor(Color.BLACK);
-                g2.setStroke(new BasicStroke(2));
-                g2.drawOval(ex + 8, ey + 8, celdaSize - 16, celdaSize - 16);
-
-            } else if (e instanceof EnemigoCorredor) {
-                g2.fillOval(ex + 10, ey + 10, celdaSize - 20, celdaSize - 20);
-                g2.setStroke(new BasicStroke(2));
-                g2.drawOval(ex + 6, ey + 6, celdaSize - 12, celdaSize - 12);
+            if (e instanceof EnemigoBasico || e instanceof EnemigoTanque || e instanceof EnemigoCorredor) {
+                int offset = (e instanceof EnemigoBasico) ? 8 : (e instanceof EnemigoCorredor) ? 10 : 4;
+                g2.fillOval(ex + offset, ey + offset, celdaSize - (offset * 2), celdaSize - (offset * 2));
             }
 
-            if (e.estaCongelado()) {
-                g2.setColor(new Color(255, 255, 255, 100));
-                g2.drawOval(ex + 4, ey + 4, celdaSize - 8, celdaSize - 8);
-            }
         }
     }
 
@@ -190,6 +175,16 @@ public class PanelJuego extends JPanel implements KeyListener {
         boolean pingActivo = modelo.getPosicionPing() != null;
         g2.setColor(pingActivo ? Color.ORANGE : Color.GREEN);
         g2.drawString("PING [P]: " + (pingActivo ? "ACTIVO" : "LISTO"), margenLargo, yItem);
+
+        String[] nombresHeat = {"SIGILO", "SOSPECHA", "¡BRECHA!"};
+        Color[] coloresHeat = {Color.GRAY, Color.ORANGE, Color.RED};
+
+        g2.setColor(coloresHeat[modelo.getHeatLevel() - 1]);
+        g2.drawString("NIVEL DE ALERTA: " + nombresHeat[modelo.getHeatLevel() - 1], margenLargo, yItem);
+
+        yItem += 25;
+        g2.setColor(Color.WHITE);
+        g2.drawString("VIRUS [Q]: " + modelo.getVirusInventario(), margenLargo, yItem);
     }
 
     private void dibujarEstadoHabilidad(Graphics2D g2, String nombre, int cooldown, int x, int y) {
@@ -246,6 +241,10 @@ public class PanelJuego extends JPanel implements KeyListener {
                 modelo.activarHabilidadEspecial();
                 repaint();
                 return;
+            }
+            case KeyEvent.VK_Q -> {
+                modelo.usarVirusSobrecarga();
+                repaint();
             }
         }
 
