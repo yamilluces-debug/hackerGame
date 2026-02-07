@@ -6,29 +6,13 @@ public class PersistenciaDatos {
 
     private static final String ARCHIVO = "progreso.dat";
 
-    public static int cargarMonedas() {
-        try (BufferedReader br = new BufferedReader(new FileReader(ARCHIVO))) {
-            return Integer.parseInt(br.readLine());
-        } catch (Exception e) {
-            return 0;
-        }
-    }
-
-    public static void guardarMonedas(int cantidad) {
-        try (PrintWriter pw = new PrintWriter(new FileWriter(ARCHIVO))) {
-            pw.println(cantidad);
-        } catch (IOException e) {
-            System.err.println("Error al guardar progreso: " + e.getMessage());
-        }
-    }
-
     public static int[] cargarProgreso() {
         try (BufferedReader br = new BufferedReader(new FileReader(ARCHIVO))) {
             return new int[]{
-                Integer.parseInt(br.readLine()),
-                Integer.parseInt(br.readLine()),
-                Integer.parseInt(br.readLine()),
-                Integer.parseInt(br.readLine())
+                Integer.parseInt(br.readLine()), // 0: Monedas
+                Integer.parseInt(br.readLine()), // 1: Duracion EMP
+                Integer.parseInt(br.readLine()), // 2: Cooldown Dash
+                Integer.parseInt(br.readLine()) // 3: Tiene Escudo (0 o 1)
             };
         } catch (Exception e) {
             return new int[]{0, 3, 5, 0};
@@ -42,7 +26,7 @@ public class PersistenciaDatos {
             pw.println(dash);
             pw.println(esc);
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Error al guardar el progreso: " + e.getMessage());
         }
     }
 }

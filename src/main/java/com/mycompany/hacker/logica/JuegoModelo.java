@@ -385,14 +385,22 @@ public class JuegoModelo {
             return;
         }
 
-        // Cálculo: 10 por item + 10 si es victoria
         monedasGanadasEnPartida = itemsRecogidos * 10;
         if (victoria) {
             monedasGanadasEnPartida += 10;
         }
 
         monedasTotales += monedasGanadasEnPartida;
-        PersistenciaDatos.guardarMonedas(monedasTotales); // Guardar en archivo
+
+        int escudoGuardar = tieneEscudo ? 1 : 0;
+
+        PersistenciaDatos.guardarProgreso(
+                monedasTotales,
+                duracionEMP,
+                maxCooldownDash,
+                escudoGuardar
+        );
+
         progresoGuardado = true;
     }
 
