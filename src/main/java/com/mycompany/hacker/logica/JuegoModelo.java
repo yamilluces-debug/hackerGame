@@ -153,13 +153,41 @@ public class JuegoModelo {
             int r = rand.nextInt(filas);
             int c = rand.nextInt(columnas);
 
-            // Spawnear lejos del jugador (suma de coordenadas > 4)
+            int tipo = rand.nextInt(3);
             if (tablero[r][c] == VACIO && (r + c > 4)) {
-                enemigos.add(new Enemigo(r, c));
+                switch (tipo) {
+                    case 0 ->
+                        enemigos.add(new EnemigoCorredor(r, c));
+                    case 1 ->
+                        enemigos.add(new EnemigoTanque(r, c));
+                    case 2 ->
+                        enemigos.add(new EnemigoBasico(r, c));
+                    //enemigos.add(new EnemigoTorreta(r, c));
+                    case 3 ->
+                        enemigos.add(new EnemigoBasico(r, c));
+                }
                 colocados++;
             }
             intentos++;
         }
+    }
+
+    private void moverEnemigos() {
+        Posicion obj = (posicionPing != null) ? posicionPing : jugador;
+        for (Enemigo e : enemigos) {
+            e.actuar(obj, this);
+        }
+    }
+
+    public boolean hayLineaDeVision(Posicion p1, Posicion p2) {
+
+        return true;
+    }
+
+    public void notificarDisparoTorreta() {
+        juegoTerminado = true;
+        victoria = false;
+        mensajeFin = "¡ELIMINADO POR SNIPER!";
     }
 
     public void procesarTurnoJugador(int dx, int dy, boolean esDash) {
@@ -170,7 +198,6 @@ public class JuegoModelo {
         mensajeSistema = "";
         int multiplicador = 1;
 
-        // Lógica de Overclock (Dash)
         if (esDash) {
             if (cooldownDash == 0) {
                 multiplicador = 2;
@@ -185,9 +212,7 @@ public class JuegoModelo {
         int nuevaX = jugador.x + (dx * multiplicador);
         int nuevaY = jugador.y + (dy * multiplicador);
 
-        // Validar movimiento (Saltar muros permitido en Dash según requerimiento)
         if (nuevaX >= 0 && nuevaX < columnas && nuevaY >= 0 && nuevaY < filas) {
-            // Solo verificamos la celda de destino
             if (tablero[nuevaY][nuevaX] != PARED) {
                 jugador.x = nuevaX;
                 jugador.y = nuevaY;
@@ -222,7 +247,7 @@ public class JuegoModelo {
             cooldownDash--;
         }
         if (cooldownHabilidad > 0) {
-            cooldownHabilidad--; // EMP
+            cooldownHabilidad--;
         }
         // Manejar duración del Ping
         if (turnosPingRestantes > 0) {
@@ -271,14 +296,6 @@ public class JuegoModelo {
                 victoria = true;
                 mensajeFin = "¡HACKEO COMPLETADO!";
             }
-        }
-    }
-
-    private void moverEnemigos() {
-
-        Posicion objetivoActual = (posicionPing != null) ? posicionPing : jugador;
-        for (Enemigo e : enemigos) {
-            e.moverHacia(objetivoActual, this);
         }
     }
 

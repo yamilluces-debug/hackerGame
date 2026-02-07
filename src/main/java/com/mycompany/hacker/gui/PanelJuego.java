@@ -94,15 +94,62 @@ public class PanelJuego extends JPanel implements KeyListener {
     }
 
     private void dibujarEntidades(Graphics2D g2) {
-        // Jugador
+        // --- 1. DIBUJAR JUGADOR (Cubo de Datos Verde) ---
         Posicion p = modelo.getJugador();
-        g2.setColor(Color.GREEN);
-        g2.fillRect(p.x * celdaSize + 5, p.y * celdaSize + 5, celdaSize - 10, celdaSize - 10);
+        int px = p.x * celdaSize;
+        int py = p.y * celdaSize;
 
-        // Enemigos
+        g2.setColor(Color.GREEN);
+        g2.fillRect(px + 6, py + 6, celdaSize - 12, celdaSize - 12);
+        // Brillo interno del jugador
+        g2.setColor(Color.WHITE);
+        g2.setStroke(new BasicStroke(1));
+        g2.drawRect(px + 10, py + 10, celdaSize - 20, celdaSize - 20);
+
+        // --- 2. DIBUJAR ENEMIGOS ---
         for (Enemigo e : modelo.getEnemigos()) {
-            g2.setColor(e.estaCongelado() ? Color.BLUE : Color.RED);
-            g2.fillOval(e.getPos().x * celdaSize + 5, e.getPos().y * celdaSize + 5, celdaSize - 10, celdaSize - 10);
+            int ex = e.getPos().x * celdaSize;
+            int ey = e.getPos().y * celdaSize;
+            int centroX = ex + (celdaSize / 2);
+            int centroY = ey + (celdaSize / 2);
+
+            if (e.estaCongelado()) {
+                g2.setColor(new Color(0, 150, 255));
+            } else if (e instanceof EnemigoCorredor) {
+                g2.setColor(Color.ORANGE);
+            } else if (e instanceof EnemigoTanque) {
+                g2.setColor(Color.MAGENTA);
+            } else if (e instanceof EnemigoTorreta) {
+                g2.setColor(Color.RED);
+            } else if (e instanceof EnemigoBasico) {
+                g2.setColor(Color.GREEN);
+            }
+
+            if (e instanceof EnemigoTorreta) {
+                int[] xPoints = {centroX, ex + celdaSize - 8, centroX, ex + 8};
+                int[] yPoints = {ey + 8, centroY, ey + celdaSize - 8, centroY};
+                g2.fillPolygon(xPoints, yPoints, 4);
+
+                g2.setColor(Color.BLACK);
+                g2.fillRect(centroX - 2, centroY - 2, 4, 4);
+
+            } else if (e instanceof EnemigoTanque) {
+                g2.fillOval(ex + 4, ey + 4, celdaSize - 8, celdaSize - 8);
+
+                g2.setColor(Color.BLACK);
+                g2.setStroke(new BasicStroke(2));
+                g2.drawOval(ex + 8, ey + 8, celdaSize - 16, celdaSize - 16);
+
+            } else if (e instanceof EnemigoCorredor) {
+                g2.fillOval(ex + 10, ey + 10, celdaSize - 20, celdaSize - 20);
+                g2.setStroke(new BasicStroke(2));
+                g2.drawOval(ex + 6, ey + 6, celdaSize - 12, celdaSize - 12);
+            }
+
+            if (e.estaCongelado()) {
+                g2.setColor(new Color(255, 255, 255, 100));
+                g2.drawOval(ex + 4, ey + 4, celdaSize - 8, celdaSize - 8);
+            }
         }
     }
 
