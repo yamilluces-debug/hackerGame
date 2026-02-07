@@ -1,5 +1,6 @@
 package com.mycompany.hacker.gui;
 
+import com.mycompany.hacker.gui.hud.HudManager;
 import com.mycompany.hacker.logica.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -8,8 +9,10 @@ import javax.swing.JPanel;
 public class PanelJuego extends JPanel implements KeyListener {
 
     private JuegoModelo modelo;
+    private HudManager hudManager = new HudManager();
     private MainVentana ventanaPrincipal;
     private int celdaSize = 40;
+    public static final int ANCHO_HUD_LATERAL = 250;
 
     public PanelJuego(MainVentana v) {
         this.ventanaPrincipal = v;
@@ -20,10 +23,12 @@ public class PanelJuego extends JPanel implements KeyListener {
 
     public void iniciarJuego(int filas, int cols) {
         modelo = new JuegoModelo(filas, cols);
-        int altoDisp = getHeight() > 0 ? getHeight() : 600;
-        int anchoDisp = getWidth() > 0 ? getWidth() : 800;
+
+        int altoDisp = (getHeight() > 0 ? getHeight() : 600) - 60;
+        int anchoDisp = (getWidth() > 0 ? getWidth() : 800) - ANCHO_HUD_LATERAL;
+
         if (filas > 0 && cols > 0) {
-            celdaSize = Math.min((altoDisp - 50) / filas, anchoDisp / cols);
+            celdaSize = Math.min(altoDisp / filas, anchoDisp / cols);
         }
         celdaSize = Math.max(celdaSize, 10);
         repaint();
@@ -37,12 +42,11 @@ public class PanelJuego extends JPanel implements KeyListener {
         }
 
         Graphics2D g2 = (Graphics2D) g;
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        // Separación de responsabilidades de dibujo
         dibujarTablero(g2);
         dibujarEntidades(g2);
-        dibujarHUD(g2);
+
+        hudManager.dibujarTodo(g2, modelo, getWidth(), getHeight(), celdaSize);
 
         if (modelo.isJuegoTerminado()) {
             dibujarPantallaFin(g2);
@@ -135,66 +139,6 @@ public class PanelJuego extends JPanel implements KeyListener {
                 g2.fillOval(ex + offset, ey + offset, celdaSize - (offset * 2), celdaSize - (offset * 2));
             }
 
-        }
-    }
-
-    private void dibujarHUD(Graphics2D g2) {
-        int margenLargo = (modelo.getColumnas() * celdaSize) + 20;
-        int alturaBase = getHeight() - 20;
-
-        g2.setColor(new Color(0, 0, 0, 180));
-        g2.fillRect(0, getHeight() - 50, getWidth(), 50);
-        g2.setColor(Color.GREEN);
-        g2.drawRect(0, getHeight() - 50, getWidth() - 1, 49);
-
-        g2.setFont(new Font("Monospaced", Font.BOLD, 16));
-        g2.setColor(Color.CYAN);
-        String txtDatos = "DATOS EXTRAÍDOS: " + modelo.getItemsRecogidos() + "/" + modelo.getItemsTotales();
-        g2.drawString(txtDatos, 20, alturaBase);
-
-        if (!modelo.getMensajeSistema().isEmpty()) {
-            g2.setColor(Color.YELLOW);
-            g2.setFont(new Font("Monospaced", Font.ITALIC, 14));
-            g2.drawString(">> " + modelo.getMensajeSistema(), 20, getHeight() - 65);
-        }
-
-        g2.setFont(new Font("Monospaced", Font.BOLD, 14));
-        int yItem = 40;
-
-        // Título lateral
-        g2.setColor(Color.GREEN);
-        g2.drawString("--- PROTOCOLOS ---", margenLargo, yItem);
-
-        yItem += 30;
-        dibujarEstadoHabilidad(g2, "EMP [SPACE]", modelo.getCooldown(), margenLargo, yItem);
-
-        yItem += 25;
-        dibujarEstadoHabilidad(g2, "DASH [SHIFT]", modelo.getCooldownDash(), margenLargo, yItem);
-
-        yItem += 25;
-        boolean pingActivo = modelo.getPosicionPing() != null;
-        g2.setColor(pingActivo ? Color.ORANGE : Color.GREEN);
-        g2.drawString("PING [P]: " + (pingActivo ? "ACTIVO" : "LISTO"), margenLargo, yItem);
-
-        String[] nombresHeat = {"SIGILO", "SOSPECHA", "¡BRECHA!"};
-        Color[] coloresHeat = {Color.GRAY, Color.ORANGE, Color.RED};
-
-        g2.setColor(coloresHeat[modelo.getHeatLevel() - 1]);
-        g2.drawString("NIVEL DE ALERTA: " + nombresHeat[modelo.getHeatLevel() - 1], margenLargo, yItem);
-
-        yItem += 25;
-        g2.setColor(Color.WHITE);
-        g2.drawString("VIRUS [Q]: " + modelo.getVirusInventario(), margenLargo, yItem);
-    }
-
-    private void dibujarEstadoHabilidad(Graphics2D g2, String nombre, int cooldown, int x, int y) {
-        if (cooldown == 0) {
-            g2.setColor(Color.GREEN);
-            g2.drawString(nombre + ": LISTO", x, y);
-        } else {
-            g2.setColor(Color.RED);
-            g2.drawString(nombre + ": " + cooldown + "s", x, y);
-            g2.fillRect(x, y + 5, 100 - (cooldown * 10), 3);
         }
     }
 
