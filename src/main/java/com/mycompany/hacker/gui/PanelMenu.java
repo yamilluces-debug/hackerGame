@@ -6,8 +6,6 @@ import javax.swing.*;
 public class PanelMenu extends JPanel {
 
     private MainVentana ventanaPrincipal;
-    private JComboBox<String> comboDificultad;
-    private JTextField txtSeed; // Para la semilla opcional
 
     public PanelMenu(MainVentana v) {
         this.ventanaPrincipal = v;
@@ -18,55 +16,46 @@ public class PanelMenu extends JPanel {
 
     private void inicializarComponentes() {
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.insets = new Insets(15, 10, 15, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Título con estilo
+        // Título Principal
         JLabel title = new JLabel("BREACH PROTOCOL v1.0", SwingConstants.CENTER);
         title.setForeground(Color.GREEN);
-        title.setFont(new Font("Monospaced", Font.BOLD, 28));
+        title.setFont(new Font("Monospaced", Font.BOLD, 32));
         gbc.gridx = 0;
         gbc.gridy = 0;
-        gbc.gridwidth = 2;
         add(title, gbc);
 
-        // Selector de Dificultad
-        gbc.gridy++;
-        gbc.gridwidth = 1;
-        JLabel lblDif = new JLabel("NIVEL DE ACCESO:");
-        lblDif.setForeground(Color.WHITE);
-        add(lblDif, gbc);
+        // Subtítulo decorativo
+        JLabel subtitle = new JLabel("SISTEMA OPERATIVO DE INTRUSIÓN REMOTA", SwingConstants.CENTER);
+        subtitle.setForeground(new Color(0, 100, 0));
+        subtitle.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        gbc.gridy = 1;
+        add(subtitle, gbc);
 
-        gbc.gridx = 1;
-        String[] niveles = {"NOVATO (8x8)", "HACKER (15x15)", "ELITE (25x25)", "PERSONALIZADO"};
-        comboDificultad = new JComboBox<>(niveles);
-        add(comboDificultad, gbc);
+        // Espacio en blanco
+        gbc.gridy = 2;
+        add(Box.createVerticalStrut(30), gbc);
 
-        // Campo para Semilla (Opcional)
-        gbc.gridx = 0;
-        gbc.gridy++;
-        JLabel lblSeed = new JLabel("NODO (SEED):");
-        lblSeed.setForeground(Color.GRAY);
-        add(lblSeed, gbc);
-
-        gbc.gridx = 1;
-        txtSeed = new JTextField();
-        add(txtSeed, gbc);
-
-        // Botón Iniciar
-        gbc.gridx = 0;
-        gbc.gridy++;
-        gbc.gridwidth = 2;
-        JButton btnStart = new JButton("ESTABLECER CONEXIÓN");
-        estilizarBoton(btnStart, Color.GREEN);
-        btnStart.addActionListener(e -> procesarInicio());
-        add(btnStart, gbc);
+        // Botón Principal: Ejecutar Trabajo
+        gbc.gridy = 3;
+        JButton btnTrabajo = new JButton("EJECUTAR TRABAJO DE INFILTRACIÓN");
+        estilizarBoton(btnTrabajo, Color.GREEN);
+        btnTrabajo.addActionListener(e -> {
+            VentanaConfiguracion vConfig = new VentanaConfiguracion(ventanaPrincipal);
+            vConfig.setVisible(true);
+        });
+        add(btnTrabajo, gbc);
 
         // Botón Ayuda
-        gbc.gridy++;
-        JButton btnAyuda = new JButton("MANUAL DE INTRUSIÓN");
+        gbc.gridy = 4;
+        JButton btnAyuda = new JButton("CONSULTAR MANUAL DE RED");
         estilizarBoton(btnAyuda, Color.CYAN);
-        btnAyuda.addActionListener(e -> mostrarAyuda());
+        btnAyuda.addActionListener(e -> {
+            VentanaManual manual = new VentanaManual(ventanaPrincipal);
+            manual.setVisible(true);
+        });
         add(btnAyuda, gbc);
     }
 
@@ -74,38 +63,19 @@ public class PanelMenu extends JPanel {
         btn.setBackground(Color.BLACK);
         btn.setForeground(c);
         btn.setFocusPainted(false);
+        btn.setPreferredSize(new Dimension(350, 45));
         btn.setFont(new Font("Monospaced", Font.BOLD, 14));
         btn.setBorder(BorderFactory.createLineBorder(c, 2));
-    }
 
-    private void procesarInicio() {
-        int f = 10, c = 10;
-        String seleccion = (String) comboDificultad.getSelectedItem();
+        // Efecto visual simple al pasar el mouse (opcional)
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btn.setBackground(new Color(20, 20, 20));
+            }
 
-        switch (seleccion) {
-            case "NOVATO (8x8)" -> {
-                f = 8;
-                c = 8;
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btn.setBackground(Color.BLACK);
             }
-            case "HACKER (15x15)" -> {
-                f = 15;
-                c = 15;
-            }
-            case "ELITE (25x25)" -> {
-                f = 25;
-                c = 25;
-            }
-            case "PERSONALIZADO" -> {
-                f = 20;
-                c = 20;
-            }
-        }
-
-        ventanaPrincipal.iniciarPartida(f, c);
-    }
-
-    private void mostrarAyuda() {
-        VentanaManual manual = new VentanaManual(ventanaPrincipal);
-        manual.setVisible(true);
+        });
     }
 }
